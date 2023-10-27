@@ -46,17 +46,17 @@ app = Flask(__name__)
 def index():
     """List all available api routes."""
     return (
-        f"Available Routes for Hawaii Weather Data:"
-        f"-- Query Daily Precipitation for the past 12 Months: --"
-        f"/api/v1.0/precipitation"
-        f"-- Query All Available Weather Stations: --"
+        f"Available Routes for Hawaii Weather Data:\n"
+        f"-- Query Daily Precipitation for the past 12 Months: --\n"
+        f"/api/v1.0/precipitation\n"
+        f"-- Query All Available Weather Stations: --\n"
         f"/api/v1.0/stations"
-        f"-- Query Daily Temperature Observations for USC00519281 for the past 12 Months: -- "
+        f"-- Query Daily Temperature Observations for USC00519281 for the past 12 Months: -- \n"
         f"/api/v1.0/tobs"
-        f"-- Query Min, Average & Max Temperatures for Date Range: --"
-        f"/api/v1.0/<start>"
-        f"/api/v1.0/<start>/<end>"
-        f"If no end-date is provided, the trip api calculates stats through 08/23/17"
+        f"-- Query Min, Average & Max Temperatures for Date Range: -- \n"
+        f"/api/v1.0/<start> \n"
+        f"/api/v1.0/<start>/<end> \n"
+        f"If no end-date is provided, the trip api calculates stats through 08/23/17 \n"
     )
 
 
@@ -95,7 +95,7 @@ def get_stations():
     # Prepare payload
     payload = []
     for station in query:
-        data = {'station': station}
+        data = {'station': station[0]}
         payload.append(data)
 
     return jsonify(payload)
@@ -108,7 +108,7 @@ def get_tobs():
     # Get most active station
     most_active_station = session.query(Measurement.station, func.count(Measurement.station)). \
         group_by(Measurement.station). \
-        order_by(func.count(Measurement.station).desc()).first()[0][0]
+        order_by(func.count(Measurement.station).desc()).first()[0]
     date_start = '2017-08-23'
     date_12_months_ago = dt.datetime.strptime(date_start, "%Y-%m-%d") - dt.timedelta(days=365)
     # Filter by most active station
@@ -116,9 +116,8 @@ def get_tobs():
            Measurement.date,
            Measurement.tobs]
     query = session.query(*sel). \
-        filter(func.strftime(Measurement.date > date_12_months_ago),
-
-               Measurement.station == most_active_station[0][0]).all()
+        filter(Measurement.date > date_12_months_ago,
+               Measurement.station == most_active_station).all()
     session.close()
 # Prepare payload
     payload = []
@@ -131,7 +130,7 @@ def get_tobs():
 
 @app.route('/api/v1.0/<start>')
 @app.route('/api/v1.0/<start>/<end>')
-def get_temps_range(date_start, date_end='2017-08-23'):
+def get_temps_range(start, end='2017-08-23'):
     # Initialize session, terminate session
     session = Session(bind=engine)
     sel = [Measurement.station,
@@ -141,8 +140,8 @@ def get_temps_range(date_start, date_end='2017-08-23'):
            func.max(Measurement.tobs),
            func.round(func.avg(Measurement.tobs), 2)]
     query = session.query(*sel). \
-        filter((func.strftime(Measurement.date) > date_start),
-               (func.strftime(Measurement.date) > date_end)).\
+        filter((func.strftime(Measurement.date) >= start),
+               (func.strftime(Measurement.date) <= end)).\
         group_by(Measurement.station).all()
     session.close()
 
@@ -164,4 +163,5 @@ def get_temps_range(date_start, date_end='2017-08-23'):
 if __name__ == '__main__':
     app.run(debug=True, port=5007)
 
-#%%
+
+
