@@ -1,14 +1,14 @@
 # Import the dependencies.
-import sqlalchemy
+# import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
-from sqlalchemy import create_engine, func, distinct
+from sqlalchemy import create_engine, func
 
 import datetime as dt
 
 from flask import Flask, jsonify
 
-import numpy as np
+# import numpy as np
 #################################################
 # Database Setup
 #################################################
@@ -18,8 +18,11 @@ engine = create_engine("sqlite:///Resources/hawaii.sqlite")
 # reflect an existing database into a new model
 Base = automap_base()
 
+
 # reflect the tables
-Base.prepare(autoload_with=engine, reflect=True)
+# Reflect param in prepare is depreciated in SQLAlchemy 2.0
+# Base.prepare(autoload_with=engine, reflect=True)
+Base.prepare(autoload_with=engine)
 
 # Save reference to the table
 Measurement = Base.classes.measurement
@@ -37,8 +40,10 @@ app = Flask(__name__)
 #################################################
 # Flask Routes
 #################################################
+
+
 @app.route("/")
-def _index():
+def index():
     """List all available api routes."""
     return (
         f"Available Routes for Hawaii Weather Data:"
@@ -53,6 +58,7 @@ def _index():
         f"/api/v1.0/<start>/<end>"
         f"If no end-date is provided, the trip api calculates stats through 08/23/17"
     )
+
 
 @app.route('/api/v1.0/precipitation')
 def get_precipitation():
@@ -71,12 +77,12 @@ def get_precipitation():
     # Prepare payload
     payload = []
     for date, precipitation in query:
-        data = {}
-        data['date'] = date
-        data['prcp'] = precipitation
+        data = {'date': date, 'prcp': precipitation}
         payload.append(data)
 
     return jsonify(payload)
+
+
 @app.route('/api/v1.0/stations')
 def get_stations():
     # Initialize session, terminate session
@@ -89,37 +95,39 @@ def get_stations():
     # Prepare payload
     payload = []
     for station in query:
-        data = {}
-        data['station'] = station
+        data = {'station': station}
         payload.append(data)
 
     return jsonify(payload)
+
+
 @app.route('/api/v1.0/tobs')
 def get_tobs():
     # Initialize session, terminate session
     session = Session(bind=engine)
     # Get most active station
-    most_active_stations = session.query(Measurement.station, func.count(Measurement.station)). \
+    most_active_station = session.query(Measurement.station, func.count(Measurement.station)). \
         group_by(Measurement.station). \
         order_by(func.count(Measurement.station).desc()).first()[0][0]
+    date_start = '2017-08-23'
+    date_12_months_ago = dt.datetime.strptime(date_start, "%Y-%m-%d") - dt.timedelta(days=365)
     # Filter by most active station
     sel = [Measurement.station,
            Measurement.date,
            Measurement.tobs]
-    top_weather_station = session.query(*sel). \
-        filter(func.strftime((Measurement.date) > date_12_months_ago),
-               (Measurement.station == most_active_stations[0][0])).all()
+    query = session.query(*sel). \
+        filter(func.strftime(Measurement.date > date_12_months_ago),
+
+               Measurement.station == most_active_station[0][0]).all()
     session.close()
 # Prepare payload
     payload = []
     for station, date, tobs in query:
-        data = {}
-        data['station'] = station
-        data['date'] = date
-        data['tobs'] = tobs
+        data = {'station': station, 'date': date, 'tobs': tobs}
         payload.append(data)
 
     return jsonify(payload)
+
 
 @app.route('/api/v1.0/<start>')
 @app.route('/api/v1.0/<start>/<end>')
@@ -132,12 +140,28 @@ def get_temps_range(date_start, date_end='2017-08-23'):
            func.min(Measurement.tobs),
            func.max(Measurement.tobs),
            func.round(func.avg(Measurement.tobs), 2)]
-    top_weather_station_summary= session.query(*sel). \
-        filter(func.strftime(Measurement.date) > date_start, ). \
+    query = session.query(*sel). \
+        filter((func.strftime(Measurement.date) > date_start),
+               (func.strftime(Measurement.date) > date_end)).\
         group_by(Measurement.station).all()
-
     session.close()
 
-# Specified port for MacOS Sonoma on ARM
+    # Prepare payload
+    payload = []
+    for station, date_min, date_max, tob_min, tob_max, tob_avg in query:
+        data = {'station': station,
+                'date_start': date_min,
+                'date_end': date_max,
+                'min_percip': tob_min,
+                'max_percip': tob_max,
+                'avg_percip': tob_avg
+                }
+        payload.append(data)
+    return jsonify(payload)
+
+
+# Specified port for MacOSX Sonoma on ARM
 if __name__ == '__main__':
-    app.run(debug=True, port=5002)
+    app.run(debug=True, port=5007)
+
+#%%
