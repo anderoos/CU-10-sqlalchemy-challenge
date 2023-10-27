@@ -13,11 +13,10 @@ Using SQLalchemy, Pandas and Matplotlib, Hawaii's weather database was queried a
 * [Precipitation analysis](https://github.com/anderoos/CU-10-sqlalchemy-challenge/blob/main/climate_starter.ipynb)
 * [Station analysis](https://github.com/anderoos/CU-10-sqlalchemy-challenge/blob/main/climate_starter.ipynb)
     
-![Avg-Rainfall-Hawaii](https://github.com/anderoos/CU-10-sqlalchemy-challenge/blob/main/Images/rainfall.png)
-
-![Weather-station-observations](https://github.com/anderoos/CU-10-sqlalchemy-challenge/blob/main/Images/USC00519281.png)
 ### Part 2:
 Using Flask and SQLalchemy, develop an API to query and export datasets.
 * [app.py](https://github.com/anderoos/CU-10-sqlalchemy-challenge/blob/main/app.py)
 ## Conclusions
-None.
+![Avg-Rainfall-Hawaii](https://github.com/anderoos/CU-10-sqlalchemy-challenge/blob/main/Images/rainfall.png)
+
+![Weather-station-observations](https://github.com/anderoos/CU-10-sqlalchemy-challenge/blob/main/Images/USC00519281.png)
